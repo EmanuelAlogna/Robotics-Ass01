@@ -1,0 +1,10 @@
+\subsubsection usage Usage
+\verbatim
+<node name="car_listener" pkg="my_car" type="car_listener">
+  <param name="x_init" type="double" value="0.0" />
+  <param name="y_init" type="double" value="0.0" />
+  <param name="theta" type="double" value="0.0" />
+  <param name="odometry" type="int" value="1" />
+</node>
+\endverbatim
+

@@ -1,0 +1,9 @@
+\subsubsection parameters ROS parameters
+
+Reads and maintains the following parameters on the ROS server
+
+- \b "~x_init" : \b [double] Parameter for the x coord min: 0.0, default: 0.0, max: 100.0
+- \b "~y_init" : \b [double] Parameter for the y coord min: 0.0, default: 0.0, max: 100.0
+- \b "~theta" : \b [double] Parameter for theta min: 0.0, default: 0.0, max: 360.0
+- \b "~odometry" : \b [int] Parameter for the odomemtry min: 0, default: 1, max: 1
+

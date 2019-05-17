@@ -1,0 +1,8 @@
+prefix=/home/emanuel/catkin_ws/install
+
+Name: first_car
+Description: Description of first_car
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/emanuel/catkin_ws/install/lib 
+Requires: 

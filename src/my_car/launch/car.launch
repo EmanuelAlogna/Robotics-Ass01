@@ -1,0 +1,9 @@
+  <launch>
+  	<param name="steering_factor" value="18" />
+  	<param name="rear_wheels_baseline" value="130" />
+  	<param name="distance_front_rear" value="176.5" />
+  	<node pkg="my_car" type="car_listener" name="car_listener" output="screen"/>
+    
+    
+	<node pkg="rosbag" type="play" name="player" args="--clock /home/emanuel/Scrivania/catkin_ws/bag_1.bag"/>
+  </launch>

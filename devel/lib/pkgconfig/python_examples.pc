@@ -1,0 +1,8 @@
+prefix=/home/emanuel/catkin_ws/devel
+
+Name: python_examples
+Description: Description of python_examples
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/emanuel/catkin_ws/devel/lib 
+Requires: 
