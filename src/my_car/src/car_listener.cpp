@@ -7,8 +7,6 @@
 #include "my_car/floatStamped.h"
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
-//#include "my_car/Odometry1.h"
-
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <std_msgs/Int32.h>
@@ -26,42 +24,23 @@
 using namespace message_filters;
 #define PI 3.14159265
 
-int count = 1;
-
 float speed_L;
 float speed_R;
 float th;
 int steering_factor;
 double distance_front_rear;
 double rear_wheels_baseline;
-
-/*void chatterCallback(const my_car::floatStamped::ConstPtr& msg){
-
-  		ROS_INFO("I heard: [%f]", msg->data);
-  		ROS_INFO("I heard: [%i]", msg->header.seq);
-  		ROS_INFO("I heard: [%i]", count);	
-  		ros::Rate r(1.0);
-  		++count;
-  		r.sleep();
-}*/
-
-/*void chatterCallback(const my_car::floatStamped::ConstPtr& msg){
-	ROS_INFO("I'm here");
-}*/
-
 float x_init;
 float y_init;
 float theta = 0.0;
 float alpha;
 int odometry_model;
 int i = 0;
-
 float vx = 100;  // just random values for now.
 float vy = 100;
 float vth = 100;
 ros::Time current_time;
 ros::Time last_time;
-
 double Ts = 0;
 double last_time_R = 0;
 
@@ -83,17 +62,22 @@ void compute_ackerman(){
 	
 	vth = v/R;
 	//compute x, y, th, using Ts (also called dt)
-	//double theta_rad = th*PI)/180  //from degree to radiant -> th*(2*pi)/360
 	
-	x_init = x_init + v * Ts * cos(th);
-	y_init = y_init + v * Ts * sin(th);
+	x_init = x_init + v * Ts * cos((alpha*PI)/180);
+	y_init = y_init + v * Ts * sin((alpha*PI)/180);
 	vth = (vth*180)/PI;
 	th = th + vth*Ts;
 
+	th = th + ((vth*180)/PI)*Ts;
+
+	th = th + vth*Ts;
+	if (th >= 360){
+		th = th-360;
+	}
 	
-	ROS_INFO("v: [%f]", v);
-	ROS_INFO("vth: [%f]", vth);
-	ROS_INFO("alpha: [%f]", alpha);
+	//ROS_INFO("v: [%f]", v);
+	//ROS_INFO("vth: [%f]", vth);
+	//ROS_INFO("alpha: [%f]", alpha);
 	ROS_INFO("x': [%f]", x_init);
 	ROS_INFO("y': [%f]", y_init);
 	ROS_INFO("theta': [%f]\n", th);
@@ -113,16 +97,20 @@ void compute_differential_drive_kinematics(){
 	//compute x, y, th, using Ts (also called dt)
 	//double theta_rad = th*PI)/180  //from degree to radiant -> th*(2*pi)/360
 	
-	x_init = x_init + v * Ts * cos(th);
-	y_init = y_init + v * Ts * sin(th);
+	x_init = x_init + v * Ts * cos((th*PI)/180);
+	y_init = y_init + v * Ts * sin((th*PI)/180);
 	th = th + ((vth*180)/PI)*Ts;
+	
+	th = th + vth*Ts;
+	if (th >= 360){
+		th = th-360;
+	}
 
-	ROS_INFO("v: [%f]", v);
-	ROS_INFO("vth: [%f]", vth);
+	//ROS_INFO("v: [%f]", v);
+	//ROS_INFO("vth: [%f]", vth);
 	ROS_INFO("x': [%f]", x_init);
 	ROS_INFO("y': [%f]", y_init);
 	ROS_INFO("theta': [%f]", th);
-	
 	
 }
 
@@ -152,8 +140,6 @@ void dynamic_reconfigure_callback(my_car::parametersConfig &config, uint32_t lev
 	}
 	
 	// LET'S CHECK IF ODOMETRY MODE IS CHANGED OR IF THE STARTING POINT IS RESET
-	
-	
 	// check if value changed
 	if (dynamic_x_old != config.x_init){
 		x_init = config.x_init;
@@ -180,11 +166,7 @@ void dynamic_reconfigure_callback(my_car::parametersConfig &config, uint32_t lev
 		else 
 			ROS_INFO("Odometry now is computed using Diff. Drive Kinematics");
 	}
-	
-	
-	//ROS_INFO("config.y_init: [%0.1f]", config.y_init);
-	//ROS_INFO("y_init: [%0.1f]", y_init);
-  	
+	 	
 }	
 bool inside = false;
 
@@ -207,34 +189,9 @@ void callback(ros::NodeHandle &n, const my_car::floatStamped::ConstPtr& speed_wh
     
     double timestamp_R = speed_wheel_R->header.stamp.toSec();
     
-    
-    //ROS_INFO("Previous timestamp : [%f]", last_time_R);
-    //ROS_INFO("Timestamp of speed_wheel_R : [%f]\n", timestamp_R);
-    
-    // let's compute dt
-    
     Ts = timestamp_R - last_time_R;
     
-    //ROS_INFO("Ts : [%f]\n", Ts);
-    
-    /*
-    ROS_INFO("Angle of steering: [%0.2f]", alpha);
-    ROS_INFO("Speed left wheel: [%0.2f]", speed_L);
-    ROS_INFO("Speed right wheel: [%0.2f]\n", speed_R);
-  
-  	float b = rear_wheels_baseline/2;
-  	float R = (distance_front_rear / tan((th*PI)/180));
-  	
-  	float w1 = speed_L/(R+b);
-  	float w2 = speed_R/(R-b);
-  	
-  	ROS_INFO("W computed from left speed: [%f]", w1);
-  	ROS_INFO("W computed from right speed: [%f]", w2);
-  	*/
-  	
-  	// we have 1285 tuples of speedL, speedR, theta. 13013
-  
- 	// DYNAMIC RECONFIGURE
+    // DYNAMIC RECONFIGURE
     
     dynamic_reconfigure::Server<my_car::parametersConfig> server;
     dynamic_reconfigure::Server<my_car::parametersConfig>::CallbackType f;
@@ -254,54 +211,25 @@ void callback(ros::NodeHandle &n, const my_car::floatStamped::ConstPtr& speed_wh
 		ROS_INFO("Differential drive");
     }
    
-    // PRINT ONE MORE TIME DATA WE NEED: X,Y,THETA, VX, VY, VTHETA
- 	
- 	
- 	/*
- 	ROS_INFO("x: [%0.1f]", x_init);
-	ROS_INFO("y: [%0.1f]", y_init);
-	ROS_INFO("th: [%0.1f]", theta);
- 	ROS_INFO("vx: [%0.1f]", vx);
-	ROS_INFO("vy: [%0.1f]", vy);
-	ROS_INFO("vth: [%0.1f]\n", vth);
-	*/
-	
-	// NOW I CAN PUBLISH EVERYTHING IN THE ODOM TOPIC
-	// see main code block
-	
-	last_time_R = timestamp_R;
+    last_time_R = timestamp_R;
    
-}
-
-void poseCallback(const nav_msgs::Odometry::ConstPtr& msg){
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  transform.setOrigin( tf::Vector3(0,0, 0.0) ); // I set the origin to 0.0
-  tf::Quaternion q;
-  q.setRPY(0, 0, 0);
-  transform.setRotation(q);
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "odom"));
 }
 
 int main(int argc, char **argv){
 
-    // "odometry publisher is the name of the client!"
-	ros::init(argc, argv, "odometry_publisher");
+    ros::init(argc, argv, "odometry_publisher");
 	ros::NodeHandle n;
-	
-	//ros::Rate r(1.0);
-	
 	
   	current_time = ros::Time::now();
   	last_time = ros::Time::now();
   	
   	
-	ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
+	ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("world", 50);
  	tf::TransformBroadcaster odom_broadcaster;
  	
- 	ros::Subscriber sub = n.subscribe("odom", 10, &poseCallback);
-	
-	// GET PARAMETERS 
+ 	ros::Publisher chatter_pub = n.advertise<my_car::Odom>("publisher", 1000);
+ 	
+ 	// GET PARAMETERS 
 	
 	n.getParam("/steering_factor", steering_factor);
 	n.getParam("/distance_front_rear", distance_front_rear);
@@ -328,19 +256,13 @@ int main(int argc, char **argv){
  	while (ros::ok()){
  		if (inside){  // so if the bag has started playing
 			
-			//ROS_INFO("Speed left wheel: [%0.2f]", vx);
-			//ROS_INFO("Speed left wheel: [%0.2f]", vy);
-			//ROS_INFO("Speed left wheel: [%0.2f]\n", vth);
-			
-			// SO APPARENTLY THETA IS NOT USED
-			
 			//since all odometry is 6DOF we'll need a quaternion created from yaw
 			geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(theta);
 
 			//first, we'll publish the transform over tf
 			geometry_msgs::TransformStamped odom_trans;
 			odom_trans.header.stamp = current_time;
-			odom_trans.header.frame_id = "odom";
+			odom_trans.header.frame_id = "world";
 			odom_trans.child_frame_id = "my_car";
 
 			odom_trans.transform.translation.x = x_init;
@@ -354,7 +276,7 @@ int main(int argc, char **argv){
 			//next, we'll publish the odometry message over ROS
 			nav_msgs::Odometry odom;
 			odom.header.stamp = current_time;
-			odom.header.frame_id = "odom";
+			odom.header.frame_id = "world";
 
 			//set the position
 			odom.pose.pose.position.x = x_init;
@@ -370,6 +292,22 @@ int main(int argc, char **argv){
 
 			//publish the message
 			odom_pub.publish(odom);
+
+			my_car::Odom msg;
+			msg.x = x_init;
+			msg.y = y_init;
+			msg.th = th;
+			msg.source = odometry_model;
+			
+			if (odometry_model == 1){
+				msg.source = "Ackerman";
+			}
+    		else{
+   				msg.source = "Differential drive";
+    		}
+
+			// PUBLISH A CUSTOME MESSAGE W/ ODOMETRY VALUE (X,Y,TH) AND TYPE OF SOURCE
+			chatter_pub.publish(msg);
 
 			last_time = current_time;
 		}
